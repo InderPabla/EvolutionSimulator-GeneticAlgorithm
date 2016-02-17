@@ -205,7 +205,7 @@ public class CreaturePower : MonoBehaviour {
                 newGenes[i,k] = newGenes[(int)randomIndex,k];
             }*/
             //int randomIndex = Random.Range(0, 501);
-
+           
             int crossoverPoint = Random.Range(0, 4);
             int fitIndex1 = (int)fit[pairedIndcies[i, 0], 0];
             int fitIndex2 = (int)fit[pairedIndcies[i, 1], 0];

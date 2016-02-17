@@ -13,7 +13,8 @@ public class BloopCreature : MonoBehaviour {
 
     GameObject[] lines;
     LineRenderer[] lineRens;
-    bool activated = false; 
+    bool activated = false;
+    float timeToLive = 0f;
     void Start () {
 
         
@@ -22,12 +23,14 @@ public class BloopCreature : MonoBehaviour {
     public void ActivateWithDNA(BloopDNA dna)
     {
         bloopDNA = dna;
+        timeToLive = 15f;
         CreateCreatureFromDNA();
     }
 
     public void Activate(){
         bloopDNA = new BloopDNA();
         bloopDNA.GenerateRandomBloopDNA();
+        timeToLive = 15f;
         CreateCreatureFromDNA(); 
     }
 
@@ -41,11 +44,12 @@ public class BloopCreature : MonoBehaviour {
             bloopNodes[i].name = "Node " + i;
 
             PhysicsMaterial2D material = new PhysicsMaterial2D();
-            material.bounciness = bloopDNA.nodeData[i, 2];
+            material.friction = bloopDNA.nodeData[i, 2];
             material.bounciness = bloopDNA.nodeData[i, 3];
             bloopNodes[i].GetComponent<BoxCollider2D>().sharedMaterial = material;
 
-
+            Color bloopNodeColor = new Color(bloopDNA.nodeData[i, 2], bloopDNA.nodeData[i, 2], bloopDNA.nodeData[i, 2]);
+            bloopNodes[i].GetComponent<Renderer>().material.color = bloopNodeColor;
         }
 
         for (int i = 0; i < bloopDNA.numberOfNodes; i++)
@@ -72,11 +76,17 @@ public class BloopCreature : MonoBehaviour {
             lines[i].transform.parent = transform;
             lineRens[i] = lines[i].GetComponent<LineRenderer>();
             lineRens[i].SetWidth(0.1f, 0.1f);
+            //lineRens[i].material = new Material(Shader.Find("Particles/Additive"));
+            lineRens[i].material = new Material(Shader.Find("Particles/Multiply"));
+            
+            Color color1 = Color.red;
+            //color1.a = 1f;
+            lineRens[i].SetColors(color1, color1);
         }
 
 
         Animate();
-        Invoke("Finish", 15f);
+        Invoke("Finish", timeToLive);
         activated = true;
     }
 
@@ -93,6 +103,7 @@ public class BloopCreature : MonoBehaviour {
                     Vector3 position2 = bloopNodes[singleNodeMuscularConnectionIndex[j]].transform.position;
                     lineRens[muscelCounter].SetPosition(0, position1);
                     lineRens[muscelCounter].SetPosition(1, position2);
+                   
                     muscelCounter++;
                 }
             }
@@ -119,17 +130,18 @@ public class BloopCreature : MonoBehaviour {
             {
 
                 if(ossilate)
-                    sp[j].distance = singleNodeMuscularData[j][0];
+                    sp[j].distance = singleNodeMuscularData[j][0]; //min
                 else
-                    sp[j].distance = singleNodeMuscularData[j][1];
+                    sp[j].distance = singleNodeMuscularData[j][1]; //max
 
             }
         }
         
         ossilate = !ossilate;
-        if(ossilate)
-            Invoke("Animate", 0.1f);
-        else
-            Invoke("Animate", 0.1f);
+         if(!ossilate)
+             Invoke("Animate", 0.1f); //min
+         else
+             Invoke("Animate", 0.33f); //max
+        //Invoke("Animate", 0.25f); //internal clock
     }
 }
