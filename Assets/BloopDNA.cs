@@ -5,24 +5,70 @@ using UnityEngine;
 public class BloopDNA
 {
     int minNodes = 3;
-    int maxNodes = 10;
+    int maxNodes = 6; //10
     float[] xBoundary = {-2f,2f};
     float[] yBoundary = {0f,2f};
 
-    /* 
-    
-    */
+
     public int numberOfNodes;
     public List<List<int>> multiNodeMuscularConnectionIndices = new List<List<int>>();
     public List<List<float[]>> multiNodeMuscularData = new List<List<float[]>>();
     public float[,] nodeData;
-    public int numberOfMuscels = 0;
+    public int numberOfMuscles = 0;
     public float fitness = 0f;
+
     public BloopDNA()
     {
         
     }
 
+    public BloopDNA(int numOfNodes, List<List<int>> mNodeMuscularConnectionIndices, List<List<float[]>> mNodeMuscularData, float[,] data, int numOfMuscles, float fit)
+    {
+        this.numberOfNodes = numOfNodes;
+        this.numberOfMuscles = numOfMuscles;
+        this.nodeData = new float[numberOfNodes,4];
+
+        for (int i = 0; i < numberOfNodes; i++)
+        {
+            for (int j = 0; j < 4; j++)
+            {
+                this.nodeData[i, j] = data[i, j];
+            }
+        }
+
+        this.fitness = fit;
+        //Debug.Log("pau");
+        for(int i = 0; i < numberOfNodes; i++)
+        {
+            List<int> sNodeMuscularConnectionIndex = mNodeMuscularConnectionIndices[i];
+            List<int> singleNodeMuscularConnectionIndex = new List<int>();
+            for (int j = 0; j< sNodeMuscularConnectionIndex.Count; j++)
+            {
+                int index = sNodeMuscularConnectionIndex[j];
+                singleNodeMuscularConnectionIndex.Add(index);
+            }
+            multiNodeMuscularConnectionIndices.Add(singleNodeMuscularConnectionIndex);
+        }
+
+        //Debug.Log("paddddu");
+        for (int i = 0; i < numberOfNodes; i++)
+        {
+            List<float[]> sNodeMuscularData = mNodeMuscularData[i];
+            List<float[]> singleNodeMuscularData = new List<float[]>();
+            for (int j = 0; j< sNodeMuscularData.Count; j++)
+            {
+                float[] muscleData = sNodeMuscularData[j];
+                float[] newMuscleData = new float[muscleData.Length];
+                for (int k = 0; k < 4; k++)
+                {
+
+                    newMuscleData[k] = muscleData[k];
+                }
+                singleNodeMuscularData.Add(newMuscleData);
+            }
+            multiNodeMuscularData.Add(singleNodeMuscularData);
+        }
+    }
 
     public void GenerateRandomBloopDNA()
     {
@@ -53,7 +99,7 @@ public class BloopDNA
                         }
                         float[] muscleData = { minDistance, maxDistance, Random.Range(0f, 1f), Random.Range(0f, 3f)};//minDistance, maxDistance, damping, freq
                         singleNodeMuscularData.Add(muscleData);
-                        numberOfMuscels++;
+                        numberOfMuscles++;
                     }
                 }
             }
@@ -70,26 +116,15 @@ public class BloopDNA
 
         }
 
-        
-
-        /*for (int i = 0; i < numberOfNodes; i++)
-        {
-            List<int> singleNodeMuscularConnections = multiNodeMuscularConnectionIndices[i];
-            string conData = "Index: " + i + ", Location X: " + nodeLocations[i, 0]+", Location Y: " + nodeLocations[i, 1]+", ";
-            for (int j = 0; j < singleNodeMuscularConnections.Count; j++)
-            {
-
-                conData += singleNodeMuscularConnections[j] + " ";
-            }
-            Debug.Log(conData);
-        }*/
     }
 
+    //Not doing gene crossover, but rather asexual reproduction
     public BloopDNA[] Crossover(BloopDNA bloopDNA){
         BloopDNA[] bloopDNACrossover = new BloopDNA[2];
-        
+
         /*
-         Gene = node_1, node_1_Data, node_1_#_of_Muscles, node_1_Muscel_Conn_Incidies_X, node_1_Muscel_X_minDist, node_1_Muscel_X_maxDist, node_1_Muscel_X_damp, node_1_Muscel_X_freq
+         The general idea of gene crossover for these creatures
+         Gene = node_1, node_1_Data, node_1_#_of_Muscles, node_1_Muscle_Conn_Incidies_X, node_1_Muscle_X_minDist, node_1_Muscle_X_maxDist, node_1_Muscle_X_damp, node_1_Muscle_X_freq
          Example:
          Node A is connected to B, Node B is not connected to A.
          Node A Data:  [X: 1f, Y: 2f, Friction: 0.5f, Bouncyness: 0.1f]
@@ -98,21 +133,17 @@ public class BloopDNA
                  __________________   _____________________   ______________
          Gene = [1f, 2f, 0.5f, 0.1f,  0.5f, 1f, 0.25f, 2.5f,  0f, 1f, 1f, 0f]
                  ------------------   ---------------------   --------------                   
-                    Muscel A data      A-B connection data     Muscel B data                                                                   
+                    Muscle A data      A-B connection data     Muscle B data                                                                   
 
                       #ofNodes
-         #OfMuscels = Σ(#ofMuscelsOfNode[i])
+         #OfMuscles = Σ(#ofMusclesOfNode[i])
                       i=1
                                            
-         Total gene size = (#ofNodes + #OfMuscels)*4                                                                    
+         Total gene size = (#ofNodes + #OfMuscles)*4                                                                    
         */
 
-        int thisBloopGeneSize = (numberOfNodes + numberOfMuscels)*4;
+        int thisBloopGeneSize = (numberOfNodes + numberOfMuscles)*4;
         int nodeCrossoverPoint = Random.Range(0,numberOfNodes);
-        for(int i = 0;i < nodeCrossoverPoint; i++)
-        {
-
-        }
         return bloopDNACrossover;
     }
 
@@ -120,13 +151,24 @@ public class BloopDNA
     {
         BloopDNA[] bloopDNACrossover = new BloopDNA[2];
 
-        bloopDNACrossover[0] = this;
-        bloopDNACrossover[1] = this;
+        bloopDNACrossover[0] = this.CopyDNA();
+        bloopDNACrossover[1] = this.CopyDNA();
 
         if(Random.Range(0,100)<=5)
             bloopDNACrossover[0].Mutate();
         bloopDNACrossover[1].Mutate();
         return bloopDNACrossover;
+    }
+
+    public BloopDNA CopyDNA() {
+        BloopDNA newDNA = new BloopDNA(numberOfNodes, 
+                                       multiNodeMuscularConnectionIndices, 
+                                       multiNodeMuscularData,
+                                       nodeData,
+                                       numberOfMuscles,
+                                       fitness);
+
+        return newDNA;
     }
 
     public void Mutate() {
@@ -177,6 +219,20 @@ public class BloopDNA
                     multiNodeMuscularData[randomNode][index1][index2] = Random.Range(0f, 3f);
                 }
             }
+        }
+    }
+
+    void printMuscularConnectionIndicies(){
+        for (int i = 0; i < numberOfNodes; i++)
+        {
+            List<int> singleNodeMuscularConnections = multiNodeMuscularConnectionIndices[i];
+            string conData = "Index: " + i + ", Location X: " + nodeData[i, 0] + ", Location Y: " + nodeData[i, 1] + ", ";
+            for (int j = 0; j < singleNodeMuscularConnections.Count; j++)
+            {
+
+                conData += singleNodeMuscularConnections[j] + " ";
+            }
+            Debug.Log(conData);
         }
     }
 

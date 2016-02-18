@@ -15,6 +15,7 @@ public class BloopCreature : MonoBehaviour {
     LineRenderer[] lineRens;
     bool activated = false;
     float timeToLive = 0f;
+
     void Start () {
 
         
@@ -23,14 +24,14 @@ public class BloopCreature : MonoBehaviour {
     public void ActivateWithDNA(BloopDNA dna)
     {
         bloopDNA = dna;
-        timeToLive = 15f;
+        timeToLive = 10f; //15
         CreateCreatureFromDNA();
     }
 
     public void Activate(){
         bloopDNA = new BloopDNA();
         bloopDNA.GenerateRandomBloopDNA();
-        timeToLive = 15f;
+        timeToLive = 10f; //15
         CreateCreatureFromDNA(); 
     }
 
@@ -48,10 +49,15 @@ public class BloopCreature : MonoBehaviour {
             material.bounciness = bloopDNA.nodeData[i, 3];
             bloopNodes[i].GetComponent<BoxCollider2D>().sharedMaterial = material;
 
-            Color bloopNodeColor = new Color(bloopDNA.nodeData[i, 2], bloopDNA.nodeData[i, 2], bloopDNA.nodeData[i, 2]);
-            bloopNodes[i].GetComponent<Renderer>().material.color = bloopNodeColor;
+            if (bloopNodes[i].GetComponent<Renderer>() != null)
+            {
+                Color bloopNodeColor = new Color(bloopDNA.nodeData[i, 2], bloopDNA.nodeData[i, 2], bloopDNA.nodeData[i, 2]);
+                bloopNodes[i].GetComponent<Renderer>().material.color = bloopNodeColor;
+            }
         }
 
+        Color[] colors = new Color[bloopDNA.numberOfMuscles];
+        int index = 0;
         for (int i = 0; i < bloopDNA.numberOfNodes; i++)
         {
             List<int> singleNodeMuscularConnectionIndex = bloopDNA.multiNodeMuscularConnectionIndices[i];
@@ -64,24 +70,26 @@ public class BloopCreature : MonoBehaviour {
                 springJoint.frequency = singleNodeMuscularData[j][3];
                 springJoint.dampingRatio = singleNodeMuscularData[j][2];
                 springJoint.connectedBody = bloopNodes[singleNodeMuscularConnectionIndex[j]].GetComponent<Rigidbody2D>();
-
+                float value = singleNodeMuscularData[j][3] / 3f;
+                colors[index] = new Color(1f, value, value);
+                index++;
             }
         }
 
-        lines = new GameObject[bloopDNA.numberOfMuscels];
-        lineRens = new LineRenderer[bloopDNA.numberOfMuscels];
-        for (int i = 0; i < bloopDNA.numberOfMuscels; i++)
+        lines = new GameObject[bloopDNA.numberOfMuscles];
+        lineRens = new LineRenderer[bloopDNA.numberOfMuscles];
+        
+
+
+        for (int i = 0; i < bloopDNA.numberOfMuscles; i++)
         {
             lines[i] = Instantiate(linePrefab) as GameObject;
             lines[i].transform.parent = transform;
             lineRens[i] = lines[i].GetComponent<LineRenderer>();
             lineRens[i].SetWidth(0.1f, 0.1f);
-            //lineRens[i].material = new Material(Shader.Find("Particles/Additive"));
-            lineRens[i].material = new Material(Shader.Find("Particles/Multiply"));
-            
-            Color color1 = Color.red;
-            //color1.a = 1f;
-            lineRens[i].SetColors(color1, color1);
+            //lineRens[i].material.color = Color.blue;
+            lineRens[i].material = new Material(Shader.Find("Particles/VertexLit Blended"));
+            lineRens[i].SetColors(colors[i], colors[i]);
         }
 
 
@@ -93,7 +101,7 @@ public class BloopCreature : MonoBehaviour {
 	void Update () {
         if (activated)
         {
-            int muscelCounter = 0;
+            int muscleCounter = 0;
             for (int i = 0; i < bloopDNA.numberOfNodes; i++)
             {
                 List<int> singleNodeMuscularConnectionIndex = bloopDNA.multiNodeMuscularConnectionIndices[i];
@@ -101,10 +109,10 @@ public class BloopCreature : MonoBehaviour {
                 {
                     Vector3 position1 = bloopNodes[i].transform.position;
                     Vector3 position2 = bloopNodes[singleNodeMuscularConnectionIndex[j]].transform.position;
-                    lineRens[muscelCounter].SetPosition(0, position1);
-                    lineRens[muscelCounter].SetPosition(1, position2);
-                   
-                    muscelCounter++;
+                    lineRens[muscleCounter].SetPosition(0, position1);
+                    lineRens[muscleCounter].SetPosition(1, position2);
+
+                    muscleCounter++;
                 }
             }
         }
@@ -138,10 +146,12 @@ public class BloopCreature : MonoBehaviour {
         }
         
         ossilate = !ossilate;
-         if(!ossilate)
+
+        //internal clock
+         /*if(!ossilate)
              Invoke("Animate", 0.1f); //min
          else
-             Invoke("Animate", 0.33f); //max
-        //Invoke("Animate", 0.25f); //internal clock
+             Invoke("Animate", 0.33f); //max*/
+        Invoke("Animate", 0.25f); 
     }
 }

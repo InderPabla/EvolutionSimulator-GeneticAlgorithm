@@ -9,20 +9,23 @@ public class BloopPopulation : MonoBehaviour
     double fps = 0.0;
     double updateRate = 4.0;  // 4 updates per sec.
     public GameObject bloopCreaturePrefab;
-    // Use this for initialization
+   
     GameObject[] bloopCreatures;
     int creaturesPerGeneration = 100;
     int creatureFinishedCounter = 0;
     bool printFrames = false;
     List<BloopDNA> bloopDNAList = new List<BloopDNA>();
     float[,] rankedBloopDNAFitness;
-    
-    void Start()
-    {
+    int generationNumber = 1;
+
+    void Start() {
+        System.GC.Collect();
+
+        System.GC.WaitForPendingFinalizers();
         bloopCreatures = new GameObject[creaturesPerGeneration];
         rankedBloopDNAFitness = new float[creaturesPerGeneration,2];
-        for (int i = 0; i < creaturesPerGeneration; i++)
-        {
+
+        for (int i = 0; i < creaturesPerGeneration; i++) {
 
             bloopCreatures[i] = (GameObject)Instantiate(bloopCreaturePrefab);
             bloopCreatures[i].transform.parent = transform;
@@ -31,7 +34,6 @@ public class BloopPopulation : MonoBehaviour
 
     }
 
-    // Update is called once per frame
     void Update()
     {
 
@@ -60,7 +62,6 @@ public class BloopPopulation : MonoBehaviour
     }
 
     public void Breed(){
-        Debug.Log(bloopDNAList.Count);
         List<BloopDNA> newGenerationBloopDNAList = new List<BloopDNA>();
         int[,] randomPairedIndcies = new int[(creaturesPerGeneration / 2), 2];
         int indexCounter = 0;
@@ -77,33 +78,28 @@ public class BloopPopulation : MonoBehaviour
             randomPairedIndcies[i, 0] = Random.Range((creaturesPerGeneration/2), creaturesPerGeneration);
             randomPairedIndcies[i, 1] = Random.Range((creaturesPerGeneration/2), creaturesPerGeneration);
         }
+        int index = creaturesPerGeneration - 1;
 
         for (int i = 0; i < creaturesPerGeneration / 2; i++)
         {
-            BloopDNA[] bloopDNAReproduce = bloopDNAList[(int)randomPairedIndcies[i, 0]].AsexualReproduce();
+            BloopDNA[] bloopDNAReproduce = bloopDNAList[(int)rankedBloopDNAFitness[index, 0]].AsexualReproduce();
             newGenerationBloopDNAList.Add(bloopDNAReproduce[0]);
             newGenerationBloopDNAList.Add(bloopDNAReproduce[1]);
             indexCounter += 2;
+            index--;
         }
 
-        //bloopDNAList = newGenerationBloopDNAList;
-        /*Debug.Log("here1");
-        Debug.Log(bloopDNAList.Count);
-        for (int i = 0; i < creaturesPerGeneration; i++)
-        {
-            Debug.Log("here12");
-            bloopDNAList.RemoveAt(i);
-
-        }
-        Debug.Log("here2");*/
         bloopDNAList = new List<BloopDNA>();
         for (int i = 0; i < creaturesPerGeneration; i++)
         {
             bloopDNAList.Add(newGenerationBloopDNAList[i]);
-
         }
-        creatureFinishedCounter = 0;
 
+       
+
+        Debug.Log("Best Distance: "+ rankedBloopDNAFitness[creaturesPerGeneration-1, 1]+", Generation: "+ generationNumber);
+        generationNumber++;
+        creatureFinishedCounter = 0;
         for (int i = 0; i < creaturesPerGeneration; i++)
         {
 
@@ -111,16 +107,6 @@ public class BloopPopulation : MonoBehaviour
             bloopCreatures[i].transform.parent = transform;
             bloopCreatures[i].SendMessage("ActivateWithDNA", bloopDNAList[i]);
         }
-
-        /*for (int i = 0; i < creaturesPerGeneration/2; i++)
-       {
-           BloopDNA[] bloopDNACorssover = bloopDNAList[(int)randomPairedIndcies[i, 0]].Crossover(bloopDNAList[(int)randomPairedIndcies[i, 1]]);
-           newGenerationBloopDNAList.Add(bloopDNACorssover[0]);
-           newGenerationBloopDNAList.Add(bloopDNACorssover[1]);
-           indexCounter += 2;
-       }*/
-        //CreateTheBest();
-
     }
 
     public void BubbleSortBloopDNA() {
