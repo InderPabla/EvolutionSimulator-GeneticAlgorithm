@@ -1,8 +1,10 @@
 # Evolution Simulator Of Multinode Creatures
-#GIF of two fastest creatures 
+
+## GIF
 ![](http://imgur.com/KaOqHfH.gif)
 ![](http://imgur.com/Qd7RTK9.gif)
-# Pictures
+
+## Pictures
 ### Creature 1 - Generation 63
 #### Ability to run 41 meters in 15 seconds
 ![Alt text](https://github.com/InderPabla/EvolutionSimulator-GeneticAlgorithm/blob/master/Images/creature1.png "")
