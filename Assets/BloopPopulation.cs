@@ -92,10 +92,11 @@ public class BloopPopulation : MonoBehaviour
         bloopDNAList = new List<BloopDNA>();
         for (int i = 0; i < creaturesPerGeneration; i++)
         {
+            newGenerationBloopDNAList[i].visible = false;
             bloopDNAList.Add(newGenerationBloopDNAList[i]);
         }
-
-       
+        bloopDNAList[0].visible = true;
+        bloopDNAList[1].visible = true;
 
         Debug.Log("Best Distance: "+ rankedBloopDNAFitness[creaturesPerGeneration-1, 1]+", Generation: "+ generationNumber);
         generationNumber++;

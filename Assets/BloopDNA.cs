@@ -5,10 +5,10 @@ using UnityEngine;
 public class BloopDNA
 {
     int minNodes = 3;
-    int maxNodes = 6; //10
+    int maxNodes = 8; //10
     float[] xBoundary = {-2f,2f};
     float[] yBoundary = {0f,2f};
-
+    float maxBouncy = 0.1f;
 
     public int numberOfNodes;
     public List<List<int>> multiNodeMuscularConnectionIndices = new List<List<int>>();
@@ -16,7 +16,7 @@ public class BloopDNA
     public float[,] nodeData;
     public int numberOfMuscles = 0;
     public float fitness = 0f;
-
+    public bool visible = true;
     public BloopDNA()
     {
         
@@ -37,7 +37,7 @@ public class BloopDNA
         }
 
         this.fitness = fit;
-        //Debug.Log("pau");
+
         for(int i = 0; i < numberOfNodes; i++)
         {
             List<int> sNodeMuscularConnectionIndex = mNodeMuscularConnectionIndices[i];
@@ -50,7 +50,6 @@ public class BloopDNA
             multiNodeMuscularConnectionIndices.Add(singleNodeMuscularConnectionIndex);
         }
 
-        //Debug.Log("paddddu");
         for (int i = 0; i < numberOfNodes; i++)
         {
             List<float[]> sNodeMuscularData = mNodeMuscularData[i];
@@ -85,8 +84,8 @@ public class BloopDNA
             {
                 if (i != j)
                 {
-                    int chance = Random.Range(1,maxNodes);
-                    if(chance < (maxNodes / 2))
+                    int chance = Random.Range(0, 100);/* Random.Range(1,maxNodes);*/
+                    if(chance <= 25 /*chance < (maxNodes / 2)*/)
                     {
                         singleNodeMuscularConnectionIndex.Add(j);
                         float minDistance = Random.Range(0f, 2f);
@@ -106,13 +105,11 @@ public class BloopDNA
             multiNodeMuscularConnectionIndices.Add(singleNodeMuscularConnectionIndex);
             multiNodeMuscularData.Add(singleNodeMuscularData);
 
-            float randomX = Random.Range(xBoundary[0], xBoundary[1]);
-            float randomY = Random.Range(yBoundary[0], yBoundary[1]);
-            nodeData[i, 0] = randomX;
-            nodeData[i, 1] = randomY;
+            nodeData[i, 0] = Random.Range(xBoundary[0], xBoundary[1]); 
+            nodeData[i, 1] = Random.Range(yBoundary[0], yBoundary[1]); 
 
             nodeData[i, 2] = Random.Range(0f,1f); //friction
-            nodeData[i, 3] = Random.Range(0f,0.1f); //bouncyness
+            nodeData[i, 3] = Random.Range(0f, maxBouncy); //bouncyness
 
         }
 
@@ -172,51 +169,223 @@ public class BloopDNA
     }
 
     public void Mutate() {
-        int randomNode = Random.Range(0, numberOfNodes);
-        int thingToMutate = Random.Range(0,2);
+        int randomNodeIndex = Random.Range(0, numberOfNodes);
 
-        if(thingToMutate == 1 || multiNodeMuscularData[randomNode].Count == 0)
+        if (Random.Range(0, 3) == 0)
+        {
+            int randomExtremeMutation = Random.Range(0,2);//remove node, add node
+            if(randomNodeIndex == (numberOfNodes))
+            {
+                Debug.Log("dfdfdfdf");
+            }
+            if(randomExtremeMutation == 0 && numberOfNodes>3)
+            {
+                MutationRemoveNode(randomNodeIndex);
+            }
+            else
+            {
+                MutationAddNode();
+            }
+
+            if (randomExtremeMutation == 1 && numberOfNodes < maxNodes)
+            {
+                MutationAddNode();
+            }
+            else
+            {
+                MutationRemoveNode(randomNodeIndex);
+            }
+
+            /*if(randomExtremeMutation == 0 && numberOfNodes < maxNodes)
+            {
+                MutationAddNode();
+            }
+            else
+            {
+                MutateNodeProperty(randomNodeIndex);
+            }*/
+        }
+        else
+        {
+            MutateNodeProperty(randomNodeIndex);
+        }
+        
+
+    }
+
+    public void MutationRemoveNode(int index)
+    {
+        /*float[,] newNodeData = new float[numberOfNodes-1, 4];
+        int indexCounter = 0;
+        for (int i = 0; i < numberOfNodes; i++)
+        {
+            if (i != index)
+            {
+                for (int j = 0; j < 4; j++)
+                {
+                    //Debug.Log((numberOfNodes-1)+" "+index);
+                    newNodeData[indexCounter, j] = nodeData[i, j];
+                }
+                indexCounter++;
+            }
+        }
+        
+        nodeData = new float[numberOfNodes-1, 4];
+
+        for (int i = 0; i < (numberOfNodes-1); i++)
+        {
+            for (int j = 0; j < 4; j++)
+            {
+                nodeData[i, j] = newNodeData[i, j];
+            }
+        }
+
+        numberOfNodes = numberOfNodes - 1;
+
+        multiNodeMuscularConnectionIndices.RemoveAt(index);
+        multiNodeMuscularData.RemoveAt(index);
+
+        for (int i = 0; i < numberOfNodes; i++)
+        {
+            for (int j = 0; j < multiNodeMuscularConnectionIndices[i].Count; j++)
+            {
+                if (multiNodeMuscularConnectionIndices[i][j] == index)
+                {
+                    multiNodeMuscularConnectionIndices[i].RemoveAt(j);
+                    multiNodeMuscularData[i].RemoveAt(j);
+                    numberOfMuscles--;
+                }
+            }
+        }*/
+        numberOfNodes = 0;
+        multiNodeMuscularConnectionIndices = new List<List<int>>();
+        multiNodeMuscularData = new List<List<float[]>>();
+        numberOfMuscles = 0;
+        GenerateRandomBloopDNA();
+    }
+
+    public void MutationAddNode()
+    {
+        numberOfNodes++;
+        float[,] newNodeData = new float[numberOfNodes,4];
+
+        newNodeData[numberOfNodes - 1, 0] = Random.Range(xBoundary[0], xBoundary[1]); 
+        newNodeData[numberOfNodes - 1, 1] = Random.Range(yBoundary[0], yBoundary[1]); 
+        newNodeData[numberOfNodes - 1, 2] = Random.Range(0f, 1f); //friction
+        newNodeData[numberOfNodes - 1, 3] = Random.Range(0f, maxBouncy); //bouncyness
+
+        for (int i = 0; i < numberOfNodes - 1; i++)
+        {
+            for (int j = 0; j <4; j++)
+            {
+                newNodeData[i,j] = nodeData[i,j];
+            }
+        }
+
+        nodeData = new float[numberOfNodes, 4];
+
+        for (int i = 0; i < numberOfNodes; i++)
+        {
+            for (int j = 0; j < 4; j++)
+            {
+                nodeData[i, j] = newNodeData[i, j];
+            }
+        }
+
+        List<int> singleNodeMuscularConnectionIndex = new List<int>();
+        List<float[]> singleNodeMuscularData = new List<float[]>();
+        for(int i = 0; i<numberOfNodes - 1; i++)
+        {
+            int chance = Random.Range(0, 100);/* Random.Range(1,maxNodes);*/
+            if (chance <= 25 /*chance < (maxNodes / 2)*/)
+            {
+                singleNodeMuscularConnectionIndex.Add(i);
+                float minDistance = Random.Range(0f, 2f);
+                float maxDistance = Random.Range(0f, 2f);
+                float temp = maxDistance;
+                if (maxDistance < minDistance)
+                {
+                    maxDistance = minDistance;
+                    minDistance = temp;
+                }
+                float[] muscleData = { minDistance, maxDistance, Random.Range(0f, 1f), Random.Range(0f, 3f) };//minDistance, maxDistance, damping, freq
+                singleNodeMuscularData.Add(muscleData);
+                numberOfMuscles++;
+            }
+        }
+        
+        multiNodeMuscularConnectionIndices.Add(singleNodeMuscularConnectionIndex);
+        multiNodeMuscularData.Add(singleNodeMuscularData);
+
+        
+        for (int i = 0; i<numberOfNodes - 1; i++)
+        {
+            int j = numberOfNodes - 1;
+            int chance = Random.Range(0, 100);/* Random.Range(1,maxNodes);*/
+            if (chance <= 25 /*chance < (maxNodes / 2)*/)
+            {
+                multiNodeMuscularConnectionIndices[i].Add(j);
+                float minDistance = Random.Range(0f, 2f);
+                float maxDistance = Random.Range(0f, 2f);
+                float temp = maxDistance;
+                if (maxDistance < minDistance)
+                {
+                    maxDistance = minDistance;
+                    minDistance = temp;
+                }
+                float[] muscleData = { minDistance, maxDistance, Random.Range(0f, 1f), Random.Range(0f, 3f) };//minDistance, maxDistance, damping, freq
+                multiNodeMuscularData[i].Add(muscleData);
+                numberOfMuscles++;
+            }
+        }
+    }
+
+    public void MutateNodeProperty(int nodeIndex)
+    {
+        int thingToMutate = Random.Range(0, 2);
+
+        if (thingToMutate == 1 || multiNodeMuscularData[nodeIndex].Count == 0)
         {
             int index = Random.Range(0, 4);
-            if(index == 0)
+            if (index == 0)
             {
-                nodeData[randomNode,index] = Random.Range(xBoundary[0], xBoundary[1]);
+                nodeData[nodeIndex, index] = Random.Range(xBoundary[0], xBoundary[1]);
             }
             else if (index == 1)
             {
-                nodeData[randomNode, index] = Random.Range(yBoundary[0], yBoundary[1]);
+                nodeData[nodeIndex, index] = Random.Range(yBoundary[0], yBoundary[1]);
             }
             else if (index == 2)
             {
-                nodeData[randomNode, index] = Random.Range(0f, 1f);
+                nodeData[nodeIndex, index] = Random.Range(0f, 1f);
             }
             else if (index == 3)
             {
-                nodeData[randomNode, index] = Random.Range(0f, 0.1f);
+                nodeData[nodeIndex, index] = Random.Range(0f, maxBouncy);
             }
         }
         else
         {
-            
-            if (multiNodeMuscularData[randomNode].Count > 0)
+
+            if (multiNodeMuscularData[nodeIndex].Count > 0)
             {
-                int index1 = Random.Range(0, multiNodeMuscularData[randomNode].Count);
+                int index1 = Random.Range(0, multiNodeMuscularData[nodeIndex].Count);
                 int index2 = Random.Range(0, 4);
                 if (index2 == 0)
                 {
-                    multiNodeMuscularData[randomNode][index1][index2] = Random.Range(0f, 2f);
+                    multiNodeMuscularData[nodeIndex][index1][index2] = Random.Range(0f, 2f);
                 }
                 else if (index2 == 1)
                 {
-                    multiNodeMuscularData[randomNode][index1][index2] = Random.Range(0f, 2f);
+                    multiNodeMuscularData[nodeIndex][index1][index2] = Random.Range(0f, 2f);
                 }
                 else if (index2 == 2)
                 {
-                    multiNodeMuscularData[randomNode][index1][index2] = Random.Range(0f, 1f);
+                    multiNodeMuscularData[nodeIndex][index1][index2] = Random.Range(0f, 1f);
                 }
                 else if (index2 == 3)
                 {
-                    multiNodeMuscularData[randomNode][index1][index2] = Random.Range(0f, 3f);
+                    multiNodeMuscularData[nodeIndex][index1][index2] = Random.Range(0f, 3f);
                 }
             }
         }

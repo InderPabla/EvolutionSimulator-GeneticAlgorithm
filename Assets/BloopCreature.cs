@@ -49,10 +49,15 @@ public class BloopCreature : MonoBehaviour {
             material.bounciness = bloopDNA.nodeData[i, 3];
             bloopNodes[i].GetComponent<BoxCollider2D>().sharedMaterial = material;
 
-            if (bloopNodes[i].GetComponent<Renderer>() != null)
+
+            if (bloopNodes[i].GetComponent<Renderer>() != null && bloopDNA.visible)
             {
-                Color bloopNodeColor = new Color(bloopDNA.nodeData[i, 2], bloopDNA.nodeData[i, 2], bloopDNA.nodeData[i, 2]);
+                Color bloopNodeColor = new Color(1f-bloopDNA.nodeData[i, 2], 1f-bloopDNA.nodeData[i, 2], 1f-bloopDNA.nodeData[i, 2]);
                 bloopNodes[i].GetComponent<Renderer>().material.color = bloopNodeColor;
+            }
+            else if (!bloopDNA.visible)
+            {
+                Destroy(bloopNodes[i].GetComponent<Renderer>());
             }
         }
 
@@ -99,7 +104,7 @@ public class BloopCreature : MonoBehaviour {
     }
 
 	void Update () {
-        if (activated)
+        if (activated && bloopDNA.visible)
         {
             int muscleCounter = 0;
             for (int i = 0; i < bloopDNA.numberOfNodes; i++)
