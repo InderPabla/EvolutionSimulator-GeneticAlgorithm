@@ -4,11 +4,12 @@ using UnityEngine;
 
 public class BloopDNA
 {
-    int minNodes = 3;
-    int maxNodes = 8; //10
+    int minNodes = 3;//3
+    int maxNodes = 10; //10
     float[] xBoundary = {-2f,2f};
-    float[] yBoundary = {0f,2f};
+    float[] yBoundary = {0f,4f};
     float maxBouncy = 0.1f;
+    float percentChanceToGainMuscle = 33;
 
     public int numberOfNodes;
     public List<List<int>> multiNodeMuscularConnectionIndices = new List<List<int>>();
@@ -17,6 +18,8 @@ public class BloopDNA
     public int numberOfMuscles = 0;
     public float fitness = 0f;
     public bool visible = true;
+    public string speciesName = "";
+    
     public BloopDNA()
     {
         
@@ -26,7 +29,7 @@ public class BloopDNA
     {
         this.numberOfNodes = numOfNodes;
         this.numberOfMuscles = numOfMuscles;
-        this.nodeData = new float[numberOfNodes,4];
+        this.nodeData = new float[numberOfNodes, 4];
 
         for (int i = 0; i < numberOfNodes; i++)
         {
@@ -38,11 +41,11 @@ public class BloopDNA
 
         this.fitness = fit;
 
-        for(int i = 0; i < numberOfNodes; i++)
+        for (int i = 0; i < numberOfNodes; i++)
         {
             List<int> sNodeMuscularConnectionIndex = mNodeMuscularConnectionIndices[i];
             List<int> singleNodeMuscularConnectionIndex = new List<int>();
-            for (int j = 0; j< sNodeMuscularConnectionIndex.Count; j++)
+            for (int j = 0; j < sNodeMuscularConnectionIndex.Count; j++)
             {
                 int index = sNodeMuscularConnectionIndex[j];
                 singleNodeMuscularConnectionIndex.Add(index);
@@ -54,7 +57,7 @@ public class BloopDNA
         {
             List<float[]> sNodeMuscularData = mNodeMuscularData[i];
             List<float[]> singleNodeMuscularData = new List<float[]>();
-            for (int j = 0; j< sNodeMuscularData.Count; j++)
+            for (int j = 0; j < sNodeMuscularData.Count; j++)
             {
                 float[] muscleData = sNodeMuscularData[j];
                 float[] newMuscleData = new float[muscleData.Length];
@@ -73,6 +76,7 @@ public class BloopDNA
     {
         
         numberOfNodes = Random.Range(minNodes,maxNodes+1);
+        //Debug.Log(numberOfNodes);
         nodeData = new float[numberOfNodes, 4];
 
         for (int i = 0; i < numberOfNodes; i++)
@@ -85,7 +89,7 @@ public class BloopDNA
                 if (i != j)
                 {
                     int chance = Random.Range(0, 100);/* Random.Range(1,maxNodes);*/
-                    if(chance <= 25 /*chance < (maxNodes / 2)*/)
+                    if(chance <= percentChanceToGainMuscle /*chance < (maxNodes / 2)*/)
                     {
                         singleNodeMuscularConnectionIndex.Add(j);
                         float minDistance = Random.Range(0f, 2f);
@@ -105,12 +109,14 @@ public class BloopDNA
             multiNodeMuscularConnectionIndices.Add(singleNodeMuscularConnectionIndex);
             multiNodeMuscularData.Add(singleNodeMuscularData);
 
-            nodeData[i, 0] = Random.Range(xBoundary[0], xBoundary[1]); 
+            /*if (i == 0 && i==1)
+                nodeData[i, 0] = 0.13f;
+            else*/
+                nodeData[i, 0] = Random.Range(xBoundary[0], xBoundary[1]); 
             nodeData[i, 1] = Random.Range(yBoundary[0], yBoundary[1]); 
 
             nodeData[i, 2] = Random.Range(0f,1f); //friction
             nodeData[i, 3] = Random.Range(0f, maxBouncy); //bouncyness
-
         }
 
     }
@@ -153,7 +159,10 @@ public class BloopDNA
 
         if(Random.Range(0,100)<=5)
             bloopDNACrossover[0].Mutate();
+ 
         bloopDNACrossover[1].Mutate();
+       // bloopDNACrossover[1].Mutate();
+
         return bloopDNACrossover;
     }
 
@@ -168,23 +177,17 @@ public class BloopDNA
         return newDNA;
     }
 
+
     public void Mutate() {
         int randomNodeIndex = Random.Range(0, numberOfNodes);
-
-        if (Random.Range(0, 3) == 0)
+        if (randomNodeIndex == numberOfNodes)
+            randomNodeIndex--;
+        if (Random.Range(0, 5) == 0)
         {
             int randomExtremeMutation = Random.Range(0,2);//remove node, add node
-            if(randomNodeIndex == (numberOfNodes))
+            if(randomExtremeMutation == 0)
             {
-                Debug.Log("dfdfdfdf");
-            }
-            if(randomExtremeMutation == 0 && numberOfNodes>3)
-            {
-                MutationRemoveNode(randomNodeIndex);
-            }
-            else
-            {
-                MutationAddNode();
+                MutationRemoveMuscle(randomNodeIndex);
             }
 
             if (randomExtremeMutation == 1 && numberOfNodes < maxNodes)
@@ -193,7 +196,7 @@ public class BloopDNA
             }
             else
             {
-                MutationRemoveNode(randomNodeIndex);
+                MutationRemoveMuscle(randomNodeIndex);
             }
 
             /*if(randomExtremeMutation == 0 && numberOfNodes < maxNodes)
@@ -213,17 +216,28 @@ public class BloopDNA
 
     }
 
+    public void MutationRemoveMuscle(int index)
+    {
+        if (multiNodeMuscularConnectionIndices[index].Count > 0)
+        {
+            int index1 = Random.Range(0, multiNodeMuscularConnectionIndices[index].Count);
+            multiNodeMuscularData[index].RemoveAt(index1);
+            multiNodeMuscularConnectionIndices[index].RemoveAt(index1);
+            numberOfMuscles--;
+        }
+    }
+
     public void MutationRemoveNode(int index)
     {
-        /*float[,] newNodeData = new float[numberOfNodes-1, 4];
+        float[,] newNodeData = new float[numberOfNodes-1, 4];
         int indexCounter = 0;
         for (int i = 0; i < numberOfNodes; i++)
         {
-            if (i != index)
+            if (i != index && indexCounter< (numberOfNodes-1))
             {
                 for (int j = 0; j < 4; j++)
                 {
-                    //Debug.Log((numberOfNodes-1)+" "+index);
+                    Debug.Log(numberOfNodes+" "+index);
                     newNodeData[indexCounter, j] = nodeData[i, j];
                 }
                 indexCounter++;
@@ -239,8 +253,12 @@ public class BloopDNA
                 nodeData[i, j] = newNodeData[i, j];
             }
         }
+        /*int randoms = Random.Range(1,100000000);
+        Debug.Log("Before "+ index);
+        printMuscularConnectionIndicies();*/
 
-        numberOfNodes = numberOfNodes - 1;
+        numberOfNodes--;
+        numberOfMuscles -= multiNodeMuscularConnectionIndices[index].Count;
 
         multiNodeMuscularConnectionIndices.RemoveAt(index);
         multiNodeMuscularData.RemoveAt(index);
@@ -249,19 +267,32 @@ public class BloopDNA
         {
             for (int j = 0; j < multiNodeMuscularConnectionIndices[i].Count; j++)
             {
-                if (multiNodeMuscularConnectionIndices[i][j] == index)
+                if (multiNodeMuscularConnectionIndices[i][j] == index )
                 {
                     multiNodeMuscularConnectionIndices[i].RemoveAt(j);
                     multiNodeMuscularData[i].RemoveAt(j);
                     numberOfMuscles--;
                 }
             }
-        }*/
-        numberOfNodes = 0;
+        }
+
+        for (int i = 0; i < numberOfNodes; i++)
+        {
+            for (int j = 0; j < multiNodeMuscularConnectionIndices[i].Count; j++)
+            {
+                if (multiNodeMuscularConnectionIndices[i][j] >= index)
+                {
+                    multiNodeMuscularConnectionIndices[i][j]--;
+                }
+            }
+        }
+        //Debug.Log("After " + index);
+        //printMuscularConnectionIndicies();
+        /*numberOfNodes = 0;
         multiNodeMuscularConnectionIndices = new List<List<int>>();
         multiNodeMuscularData = new List<List<float[]>>();
         numberOfMuscles = 0;
-        GenerateRandomBloopDNA();
+        GenerateRandomBloopDNA();*/
     }
 
     public void MutationAddNode()
@@ -297,7 +328,7 @@ public class BloopDNA
         for(int i = 0; i<numberOfNodes - 1; i++)
         {
             int chance = Random.Range(0, 100);/* Random.Range(1,maxNodes);*/
-            if (chance <= 25 /*chance < (maxNodes / 2)*/)
+            if (chance <= percentChanceToGainMuscle /*chance < (maxNodes / 2)*/)
             {
                 singleNodeMuscularConnectionIndex.Add(i);
                 float minDistance = Random.Range(0f, 2f);
@@ -322,7 +353,7 @@ public class BloopDNA
         {
             int j = numberOfNodes - 1;
             int chance = Random.Range(0, 100);/* Random.Range(1,maxNodes);*/
-            if (chance <= 25 /*chance < (maxNodes / 2)*/)
+            if (chance <= percentChanceToGainMuscle /*chance < (maxNodes / 2)*/)
             {
                 multiNodeMuscularConnectionIndices[i].Add(j);
                 float minDistance = Random.Range(0f, 2f);
@@ -395,7 +426,7 @@ public class BloopDNA
         for (int i = 0; i < numberOfNodes; i++)
         {
             List<int> singleNodeMuscularConnections = multiNodeMuscularConnectionIndices[i];
-            string conData = "Index: " + i + ", Location X: " + nodeData[i, 0] + ", Location Y: " + nodeData[i, 1] + ", ";
+            string conData = "Index: " + i + "- ";
             for (int j = 0; j < singleNodeMuscularConnections.Count; j++)
             {
 
