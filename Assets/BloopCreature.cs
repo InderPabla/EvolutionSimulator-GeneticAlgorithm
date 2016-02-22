@@ -137,7 +137,7 @@ public class BloopCreature : MonoBehaviour {
             bloopDNA.fitness += bloopNodes[i].transform.position.x;
         }
         bloopDNA.fitness /= (float)bloopDNA.numberOfNodes;
-        bloopDNA.speciesName = "s" + bloopDNA.numberOfNodes + "-" + bloopDNA.numberOfMuscles;
+        
         transform.parent.SendMessage("UpdateCounter",bloopDNA);
         Destroy(gameObject);
     }
@@ -161,11 +161,11 @@ public class BloopCreature : MonoBehaviour {
         ossilate = !ossilate;
 
         //internal clock
-        if(!ossilate)
+        /*if(!ossilate)
             Invoke("Animate", 0.1f); //min
         else
-            Invoke("Animate", 0.25f); //max
-        //Invoke("Animate", 0.25f); 
+            Invoke("Animate", 0.25f); //max*/
+        Invoke("Animate", 0.25f); 
 
 
     }

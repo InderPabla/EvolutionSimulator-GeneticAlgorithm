@@ -24,7 +24,17 @@ public class BloopPopulation : MonoBehaviour
     int bestBloopDNASize = 0;
 
     //List<int[]> numberOfSpecies = new List<int[]>();
-
+    public GameObject linePrefab;
+    List<GameObject> line = new List<GameObject>();
+    List<Vector3[]> verticesList = new List<Vector3[]>();
+    Vector3 previousEnd;
+    List<object[]> speciesList = new List<object[]>();
+    float scaleX = 0.1f;
+    float scaleY = 0.1f;
+    float scaleAtX = 50;
+    float scaleAtY = 50;
+    float constantX = 3f;
+    float constantY = 4f;
     void Start()
     {
         Assembly assembly = Assembly.GetAssembly(typeof(UnityEditor.ActiveEditorTracker));
@@ -45,6 +55,30 @@ public class BloopPopulation : MonoBehaviour
             int[] muscles = new int[(i * (i - 1))+1];
             numberOfSpecies.Add(muscles);
         }*/
+
+        Vector3[] linePointsX = new Vector3[2];
+        Vector3[] linePointsY = new Vector3[2];
+        GameObject lineX = (GameObject)Instantiate(linePrefab);
+        GameObject lineY = (GameObject)Instantiate(linePrefab);
+        LineRenderer lineRenX = lineX.GetComponent<LineRenderer>();
+        LineRenderer lineRenY = lineY.GetComponent<LineRenderer>();
+        lineRenX.SetWidth(0.075f,0.075f);
+        lineRenY.SetWidth(0.075f, 0.075f);
+        linePointsX[0] = new Vector3(0*scaleX + constantX, 0 *scaleY + constantY, 0);
+        linePointsX[1] = new Vector3(scaleAtX*scaleX + constantX, 0*scaleY + constantY, 0);
+        linePointsY[0] = new Vector3(0 * scaleX + constantX, 0 * scaleY + constantY, 0);
+        linePointsY[1] = new Vector3(0 * scaleX + constantX, scaleAtY * scaleY + constantY, 0);
+        lineRenX.SetPosition(0, linePointsX[0]);
+        lineRenX.SetPosition(1, linePointsX[1]);
+        lineRenY.SetPosition(0, linePointsY[0]);
+        lineRenY.SetPosition(1, linePointsY[1]);
+        
+        line.Add(lineX);
+        line.Add(lineY);
+        verticesList.Add(linePointsX);
+        verticesList.Add(linePointsY);
+
+        previousEnd = new Vector3(constantX, constantY, 0);
 
         for (int i = creatureFinishedCounter; i < (creatureFinishedCounter + numberOfCreaturesPerRun); i++)
         {
@@ -138,12 +172,73 @@ public class BloopPopulation : MonoBehaviour
         {
             int node = bloopDNAList[i].numberOfNodes;
             int muscles = bloopDNAList[i].numberOfMuscles;
-            numberOfSpecies[node][muscles]++;
+            if (numberOfSpecies[node].Length <= muscles || muscles == -1)
+            {
+                Debug.Log("Issued about to happen: " + muscles + " " + numberOfSpecies[node].Length);
+            }
+            else
+            {
+                numberOfSpecies[node][muscles]++;
+            }
         }
-        speciesData.text = "Species Count\n";
-        //Debug.Log(bloopDNAList.Count);
+        
+        speciesData.text = "[Generation:" + generationNumber + "]\n Best specie: " + bloopDNAList[(int)rankedBloopDNAFitness[creaturesPerGeneration - 1, 0]].speciesName + ", Dist: " + rankedBloopDNAFitness[creaturesPerGeneration - 1, 1] +" Parent Specie: "+ bloopDNAList[(int)rankedBloopDNAFitness[creaturesPerGeneration - 1, 0]].parentSpecieName+ "\n";
+
+        Vector3 newEnd = new Vector3((float)generationNumber*scaleX + constantX, rankedBloopDNAFitness[creaturesPerGeneration - 1, 1] * scaleY + constantY, 0);
+        Vector3[] linePoints = {previousEnd,newEnd};
+        GameObject newLine = (GameObject)Instantiate(linePrefab);
+
+        line.Add(newLine);
+        verticesList.Add(linePoints);
+        LineRenderer newLineRen = newLine.GetComponent<LineRenderer>();
+        newLineRen.SetPosition(0,previousEnd);
+        newLineRen.SetPosition(1, newEnd);
+        newLineRen.SetWidth(0.075f, 0.075f);
+        previousEnd = newEnd;
+
+        if (generationNumber == scaleAtX)
+        {
+            float tempScaleX = scaleX;
+            float tempScaleY = scaleY;
+            scaleX *= (scaleAtX / (scaleAtX + 5));
+            scaleAtX += 5;
+            
+            
+            for (int i = 2; i < line.Count; i++)
+            {
+                LineRenderer lineRen = line[i].GetComponent<LineRenderer>();
+                linePoints = verticesList[i];
+                linePoints[0] -= new Vector3(constantX,constantY,0);
+                linePoints[1] -= new Vector3(constantX, constantY, 0);
+
+                linePoints[0].x /= tempScaleX;
+                linePoints[0].y /= tempScaleY;
+                linePoints[1].x /= tempScaleX;
+                linePoints[1].y /= tempScaleY;
+                linePoints[0].x *= scaleX;
+                linePoints[0].y *= scaleY;
+                linePoints[1].x *= scaleX;
+                linePoints[1].y *= scaleY;
+
+                linePoints[0] += new Vector3(constantX, constantY, 0);
+                linePoints[1] += new Vector3(constantX, constantY, 0);
+                verticesList[i][0] = linePoints[0];
+                verticesList[i][1] = linePoints[1];
+                lineRen.SetPosition(0,linePoints[0]);
+                lineRen.SetPosition(1, linePoints[1]);
+            }
+            previousEnd -= new Vector3(constantX, constantY, 0);
+            previousEnd.x /= tempScaleX;
+            previousEnd.y /= tempScaleY;
+            previousEnd.x *= scaleX;
+            previousEnd.y *= scaleY;
+            previousEnd += new Vector3(constantX, constantY, 0);
+        }
+
+        speciesList.Clear();
         for (int i = 0; i < numberOfSpecies.Count; i++)
         {
+            bool found = false;
             for (int j = 0; j < numberOfSpecies[i].Length; j++)
             {
                 int count = numberOfSpecies[i][j];
@@ -151,11 +246,19 @@ public class BloopPopulation : MonoBehaviour
                 {
                     int node = i ;
                     int muscle = j;
-                    speciesData.text += "s" + node + "-" + muscle + ": " + count + "\n";
+                    speciesData.text += " | s" + node + "-" + muscle + ": " + count;
+                    
+                    object[] speciesInfo = {count, "s" + node + "-" + muscle };
+                    speciesList.Add(speciesInfo);
+
+                    found = true;
                 }
             }
+            if(found)
+                speciesData.text += "\n";
         }
-        Debug.Log("Best Distance: " + rankedBloopDNAFitness[creaturesPerGeneration - 1, 1] + ", Species: " + bloopDNAList[(int)rankedBloopDNAFitness[creaturesPerGeneration - 1, 0]].speciesName + ", Generation: " + generationNumber);
+
+        //Debug.Log("Best Distance: " + rankedBloopDNAFitness[creaturesPerGeneration - 1, 1] + ", Species: " + bloopDNAList[(int)rankedBloopDNAFitness[creaturesPerGeneration - 1, 0]].speciesName + ", Generation: " + generationNumber);
 
 
         if (bestBloopDNASize == bestBloopDNA.Length)
@@ -166,7 +269,7 @@ public class BloopPopulation : MonoBehaviour
         bestBloopDNA[bestBloopDNASize].visible = true;
         bestBloopDNASize++;
         
-        if (/*generationNumber < 50*/rankedBloopDNAFitness[creaturesPerGeneration - 1, 1]<75f) 
+        if (/*generationNumber < 50*/rankedBloopDNAFitness[creaturesPerGeneration - 1, 1]<50f) 
         { 
             int index = creaturesPerGeneration - 1;
 
@@ -185,8 +288,6 @@ public class BloopPopulation : MonoBehaviour
                 newGenerationBloopDNAList[i].visible = false;
                 bloopDNAList.Add(newGenerationBloopDNAList[i]);
             }
-            bloopDNAList[0].visible = true;
-            bloopDNAList[1].visible = true;
             
             generationNumber++;
             creatureFinishedCounter = 0;
@@ -206,12 +307,38 @@ public class BloopPopulation : MonoBehaviour
                 bloopCreatures[i] = (GameObject)Instantiate(bloopCreaturePrefab);
                 bloopCreatures[i].transform.parent = transform;
                 bloopCreatures[i].SendMessage("ActivateWithDNAForever", bestBloopDNA[i]);
-
-                //bloopCreatures[i].transform.position = new Vector3(-10f+(i*2), 0, 0);
             }
         }
         
     }
+
+    public void BubbleSortSpeciesList()
+    {
+        object[] speciesInfo = new object[2];
+        bool swapped = true;
+        int j = 0;
+        while (swapped)
+        {
+            swapped = false;
+            j++;
+            for (int i = 0; i < creaturesPerGeneration - j; i++)
+            {
+                if ((int)speciesList[i][0] > (int)speciesList[i+1][0])
+                {
+                    speciesInfo[0] = speciesList[i][0];
+                    speciesInfo[1] = speciesList[i][1];
+
+                    speciesList[i][0] = speciesList[i + 1][0];
+                    speciesList[i][1] = speciesList[i + 1][1];
+
+                    speciesList[i + 1][0] = speciesInfo[0];
+                    speciesList[i + 1][1] = speciesInfo[1];
+                    swapped = true;
+                }
+            }
+        }
+    }
+
 
     public void BubbleSortBloopDNA() {
         float[] tempFitness = new float[2];

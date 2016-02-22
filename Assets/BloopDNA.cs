@@ -19,7 +19,7 @@ public class BloopDNA
     public float fitness = 0f;
     public bool visible = true;
     public string speciesName = "";
-    
+    public string parentSpecieName = "";
     public BloopDNA()
     {
         
@@ -70,13 +70,12 @@ public class BloopDNA
             }
             multiNodeMuscularData.Add(singleNodeMuscularData);
         }
+        speciesName = "s" + numberOfNodes + "-" + numberOfMuscles;
     }
 
     public void GenerateRandomBloopDNA()
     {
-        
         numberOfNodes = Random.Range(minNodes,maxNodes+1);
-        //Debug.Log(numberOfNodes);
         nodeData = new float[numberOfNodes, 4];
 
         for (int i = 0; i < numberOfNodes; i++)
@@ -109,16 +108,14 @@ public class BloopDNA
             multiNodeMuscularConnectionIndices.Add(singleNodeMuscularConnectionIndex);
             multiNodeMuscularData.Add(singleNodeMuscularData);
 
-            /*if (i == 0 && i==1)
-                nodeData[i, 0] = 0.13f;
-            else*/
-                nodeData[i, 0] = Random.Range(xBoundary[0], xBoundary[1]); 
+
+            nodeData[i, 0] = Random.Range(xBoundary[0], xBoundary[1]); 
             nodeData[i, 1] = Random.Range(yBoundary[0], yBoundary[1]); 
 
             nodeData[i, 2] = Random.Range(0f,1f); //friction
             nodeData[i, 3] = Random.Range(0f, maxBouncy); //bouncyness
         }
-
+        speciesName = "s" + numberOfNodes + "-" + numberOfMuscles;
     }
 
     //Not doing gene crossover, but rather asexual reproduction
@@ -161,7 +158,9 @@ public class BloopDNA
             bloopDNACrossover[0].Mutate();
  
         bloopDNACrossover[1].Mutate();
-       // bloopDNACrossover[1].Mutate();
+
+        bloopDNACrossover[0].parentSpecieName = speciesName;
+        bloopDNACrossover[1].parentSpecieName = speciesName;
 
         return bloopDNACrossover;
     }
@@ -180,40 +179,33 @@ public class BloopDNA
 
     public void Mutate() {
         int randomNodeIndex = Random.Range(0, numberOfNodes);
-        if (randomNodeIndex == numberOfNodes)
-            randomNodeIndex--;
-        if (Random.Range(0, 5) == 0)
+        
+        if (Random.Range(0, 4) == 0)
         {
-            int randomExtremeMutation = Random.Range(0,2);//remove node, add node
-            if(randomExtremeMutation == 0)
-            {
-                MutationRemoveMuscle(randomNodeIndex);
-            }
-
-            if (randomExtremeMutation == 1 && numberOfNodes < maxNodes)
+            
+            int randomExtremeMutation = Random.Range(0,2);
+            bool extremeMutation = false;
+            if (randomExtremeMutation == 0 && numberOfNodes < maxNodes)
             {
                 MutationAddNode();
-            }
-            else
-            {
-                MutationRemoveMuscle(randomNodeIndex);
+                extremeMutation = true;
             }
 
-            /*if(randomExtremeMutation == 0 && numberOfNodes < maxNodes)
+            if (randomExtremeMutation == 1 && numberOfNodes > minNodes)
             {
-                MutationAddNode();
+                MutationDisconnectNode(randomNodeIndex);
+                extremeMutation = true;
             }
-            else
-            {
+
+            if (extremeMutation == false)
                 MutateNodeProperty(randomNodeIndex);
-            }*/
+        
+            speciesName = "s" + numberOfNodes + "-" + numberOfMuscles;
         }
         else
         {
             MutateNodeProperty(randomNodeIndex);
-        }
-        
-
+        }      
     }
 
     public void MutationRemoveMuscle(int index)
@@ -227,72 +219,66 @@ public class BloopDNA
         }
     }
 
-    public void MutationRemoveNode(int index)
+    public void MutationDisconnectNode(int nodeIndex)
     {
-        float[,] newNodeData = new float[numberOfNodes-1, 4];
-        int indexCounter = 0;
-        for (int i = 0; i < numberOfNodes; i++)
-        {
-            if (i != index && indexCounter< (numberOfNodes-1))
-            {
-                for (int j = 0; j < 4; j++)
-                {
-                    Debug.Log(numberOfNodes+" "+index);
-                    newNodeData[indexCounter, j] = nodeData[i, j];
-                }
-                indexCounter++;
-            }
-        }
         
-        nodeData = new float[numberOfNodes-1, 4];
-
-        for (int i = 0; i < (numberOfNodes-1); i++)
+        for (int i = 0; i< multiNodeMuscularConnectionIndices[nodeIndex].Count; i++)
         {
-            for (int j = 0; j < 4; j++)
-            {
-                nodeData[i, j] = newNodeData[i, j];
-            }
+            multiNodeMuscularConnectionIndices[nodeIndex].RemoveAt(i);
+            multiNodeMuscularData[nodeIndex].RemoveAt(i);
+            numberOfMuscles--;
         }
-        /*int randoms = Random.Range(1,100000000);
-        Debug.Log("Before "+ index);
-        printMuscularConnectionIndicies();*/
-
-        numberOfNodes--;
-        numberOfMuscles -= multiNodeMuscularConnectionIndices[index].Count;
-
-        multiNodeMuscularConnectionIndices.RemoveAt(index);
-        multiNodeMuscularData.RemoveAt(index);
-
-        for (int i = 0; i < numberOfNodes; i++)
+        for (int i = 0; i < multiNodeMuscularConnectionIndices.Count; i++)
         {
-            for (int j = 0; j < multiNodeMuscularConnectionIndices[i].Count; j++)
+            if (i != nodeIndex)
             {
-                if (multiNodeMuscularConnectionIndices[i][j] == index )
+                for (int j = 0; j < multiNodeMuscularConnectionIndices[i].Count; j++)
                 {
-                    multiNodeMuscularConnectionIndices[i].RemoveAt(j);
-                    multiNodeMuscularData[i].RemoveAt(j);
-                    numberOfMuscles--;
+                    if (multiNodeMuscularConnectionIndices[i][j] == nodeIndex)
+                    {
+                        multiNodeMuscularConnectionIndices[i].RemoveAt(j);
+                        multiNodeMuscularData[i].RemoveAt(j);
+                        numberOfMuscles--;
+                    }
                 }
-            }
+            }         
         }
 
-        for (int i = 0; i < numberOfNodes; i++)
+        for (int i = 0; i < multiNodeMuscularConnectionIndices.Count; i++)
         {
             for (int j = 0; j < multiNodeMuscularConnectionIndices[i].Count; j++)
             {
-                if (multiNodeMuscularConnectionIndices[i][j] >= index)
+                if (multiNodeMuscularConnectionIndices[i][j] > nodeIndex)
                 {
                     multiNodeMuscularConnectionIndices[i][j]--;
                 }
+            } 
+        }
+        multiNodeMuscularConnectionIndices.RemoveAt(nodeIndex);
+        multiNodeMuscularData.RemoveAt(nodeIndex);
+
+        List<float[]> newNodeDataList = new List<float[]>();
+        
+        for (int i = 0; i < numberOfNodes; i++)
+        {
+            float[] data = new float[4];
+            for(int j = 0; j < 4; j++)
+            {
+                data[j] = nodeData[i,j];
+            }
+            newNodeDataList.Add(data);
+        }
+        newNodeDataList.RemoveAt(nodeIndex);
+        numberOfNodes--;
+        nodeData = new float[numberOfNodes,4];
+        for (int i = 0; i < numberOfNodes; i++)
+        {
+            float[] data = newNodeDataList[i];
+            for (int j = 0; j < 4; j++)
+            {
+                nodeData[i,j] = data[j];
             }
         }
-        //Debug.Log("After " + index);
-        //printMuscularConnectionIndicies();
-        /*numberOfNodes = 0;
-        multiNodeMuscularConnectionIndices = new List<List<int>>();
-        multiNodeMuscularData = new List<List<float[]>>();
-        numberOfMuscles = 0;
-        GenerateRandomBloopDNA();*/
     }
 
     public void MutationAddNode()
@@ -435,7 +421,5 @@ public class BloopDNA
             Debug.Log(conData);
         }
     }
-
-    
 
 }
