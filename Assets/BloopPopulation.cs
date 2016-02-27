@@ -25,7 +25,9 @@ public class BloopPopulation : MonoBehaviour
 
     //List<int[]> numberOfSpecies = new List<int[]>();
     public GameObject linePrefab;
-    List<GameObject> line = new List<GameObject>();
+    //List<GameObject> line = new List<GameObject>();
+    GameObject[] lineArray;
+    int lineArrayIndex = 0;
     List<Vector3[]> verticesList = new List<Vector3[]>();
     Vector3 previousEnd;
     List<object[]> speciesList = new List<object[]>();
@@ -72,9 +74,14 @@ public class BloopPopulation : MonoBehaviour
         lineRenX.SetPosition(1, linePointsX[1]);
         lineRenY.SetPosition(0, linePointsY[0]);
         lineRenY.SetPosition(1, linePointsY[1]);
-        
-        line.Add(lineX);
-        line.Add(lineY);
+
+        lineArray = new GameObject[27];
+        lineArrayIndex = 2;
+        lineArray[0] = lineX;
+        lineArray[1] = lineX;
+        /*line.Add(lineX);
+        line.Add(lineY);*/
+
         verticesList.Add(linePointsX);
         verticesList.Add(linePointsY);
 
@@ -184,19 +191,31 @@ public class BloopPopulation : MonoBehaviour
         
         speciesData.text = "[Generation:" + generationNumber + "]\n Best specie: " + bloopDNAList[(int)rankedBloopDNAFitness[creaturesPerGeneration - 1, 0]].speciesName + ", Dist: " + rankedBloopDNAFitness[creaturesPerGeneration - 1, 1] +" Parent Specie: "+ bloopDNAList[(int)rankedBloopDNAFitness[creaturesPerGeneration - 1, 0]].parentSpecieName+ "\n";
 
-        Vector3 newEnd = new Vector3((float)generationNumber*scaleX + constantX, rankedBloopDNAFitness[creaturesPerGeneration - 1, 1] * scaleY + constantY, 0);
+        Vector3 newEnd = new Vector3((float)(lineArrayIndex-1) *scaleX + constantX, rankedBloopDNAFitness[creaturesPerGeneration - 1, 1] * scaleY + constantY, 0);
         Vector3[] linePoints = {previousEnd,newEnd};
         GameObject newLine = (GameObject)Instantiate(linePrefab);
 
-        line.Add(newLine);
+
+        //line.Add(newLine);
+        Destroy(lineArray[lineArrayIndex]);
+        lineArray[lineArrayIndex] = newLine;
+
         verticesList.Add(linePoints);
         LineRenderer newLineRen = newLine.GetComponent<LineRenderer>();
-        newLineRen.SetPosition(0,previousEnd);
+        newLineRen.SetPosition(0, previousEnd);
         newLineRen.SetPosition(1, newEnd);
         newLineRen.SetWidth(0.075f, 0.075f);
         previousEnd = newEnd;
 
-        if (generationNumber == scaleAtX)
+        lineArrayIndex++;
+        if (lineArrayIndex == 27)
+        {
+            lineArrayIndex = 2;
+            previousEnd.x = (float)(lineArrayIndex - 1) * scaleX + constantX;
+        }
+       
+
+        /*if (generationNumber == scaleAtX)
         {
             float tempScaleX = scaleX;
             float tempScaleY = scaleY;
@@ -233,7 +252,7 @@ public class BloopPopulation : MonoBehaviour
             previousEnd.x *= scaleX;
             previousEnd.y *= scaleY;
             previousEnd += new Vector3(constantX, constantY, 0);
-        }
+        }*/
 
         speciesList.Clear();
         for (int i = 0; i < numberOfSpecies.Count; i++)
